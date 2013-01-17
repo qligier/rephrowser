@@ -219,30 +219,30 @@ class phrowser {
 			$header_divider = strpos($http, "\r\n\r\n");
 			$this->body = substr($http, $header_divider + 4);
 			$this->headers = substr($http, 0, $header_divider);
-			//$this->headers = $this->parse_headers($this->headers_raw);
+			$headers = $this->parse_headers($this->headers);
 
 			$http = $this->body;
 		}
 
-		if ( array_key_exists('Content-Type', $this->headers) && strpos($this->headers['Content-Type'], 'charset=') ) {
-			if ( ( $charset = substr($this->headers['Content-Type'], strpos($this->headers['Content-Type'], 'charset=') + 8) ) != 'UTF-8' )
+		if (array_key_exists('Content-Type', $headers) && strpos($headers['Content-Type'], 'charset=')) {
+			if (($charset = substr($headers['Content-Type'], strpos($headers['Content-Type'], 'charset=') + 8)) != 'UTF-8')
 				$this->body = iconv($charset, 'UTF-8', $this->body);
 		}
-		else if ( $charset = $this->find_scalar_match('/text\/html; charset=([^"]+)"/') )
+		else if ($charset = $this->find_scalar_match('/text\/html; charset=([^"]+)"/'))
 			$this->body = iconv($charset, 'UTF-8', $this->body);
 	}
 
-	protected function parse_headers( $http ) {
+	protected function parse_headers($http) {
 		$headers = array();
 
-		if ( $http_lines = explode("\r\n", $http) ) {
-			foreach ( $http_lines as $line ) {
+		if ($http_lines = explode("\r\n", $http)) {
+			foreach ($http_lines as $line) {
 				$header = explode(':', $line);
-				if ( $headers[$header[0]] ) {
+				if ($headers[$header[0]]) {
 					$headers[$header[0]] = (array)$headers[$header[0]];
 					$headers[$header[0]][] = $header[1];
 				} else {
-					if ( $header[0] == 'Location' )
+					if ($header[0] == 'Location')
 						$headers[$header[0]] = implode(':', array_slice($header, 1));
 					else
 						$headers[$header[0]] = $header[1];
@@ -250,21 +250,21 @@ class phrowser {
 			}
 		}
 
-		if ( $headers['Set-Cookie'] )
+		if ($headers['Set-Cookie'])
 			$this->parse_cookies($headers);
 		
 		return $headers;
 	}
 
-	protected function parse_cookies( $headers ) {
-		if ( $cookie_headers = (array)$headers['Set-Cookie'] ) {
-			foreach ( $cookie_headers as $cookie_header ) {
+	protected function parse_cookies($headers) {
+		if ($cookie_headers = (array)$headers['Set-Cookie']) {
+			foreach ($cookie_headers as $cookie_header) {
 				$cookie_data = explode(';', $cookie_header);
 				$cookie_val = array_shift($cookie_data);
 				$cookie_val = explode('=', $cookie_val);
 				
 				$cookie_params = array();
-				foreach ( $cookie_data as $cookie_param ) {
+				foreach ($cookie_data as $cookie_param) {
 					$cookie_param = explode('=', $cookie_param);
 					$cookie_params[trim($cookie_param[0])] = $cookie_param[1];
 				}
