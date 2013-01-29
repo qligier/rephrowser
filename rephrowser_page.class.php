@@ -256,7 +256,7 @@ class rephrowser_page {
     public function save_in_file($filepath, $overwrite = false) {
         if ((is_file($filepath) && !$overwrite) || $this->request_time === 0)
             return false;
-        return file_put_contents($filepath, $this->response_body);
+        return file_put_contents($filepath, serialize($this));
     }
 
 

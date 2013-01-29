@@ -9,7 +9,20 @@ class rephrowser_session {
     protected $session_follow_location  = true;
     protected $session_auto_referer     = true;
 
-    public function destry_historical() {
+/*
+    public function __sleep() {
+        //return serialize($this);
+    }
+
+    public function __wakeup($serialize) {
+        //$this = unserialize($serialize);
+    }
+*/
+
+    public function serialized() {
+        return serialize($this);
+    }
+    public function destroy_historical() {
         $this->session_history = array();
     }
 
@@ -55,7 +68,15 @@ class rephrowser_session {
         return $new_page;
     }
 
-    public function abc() {
-        echo 'ABC as easy as 123';
+    public function save_in_file($filepath, $overwrite = false) {
+        if (is_file($filepath) && !$overwrite)
+            return false;
+        return file_put_contents($filepath, serialize($this));
     }
+
+    public function load_from_file($filename) {
+        unset($this);
+        return unserialize(file_get_contents($filename));
+    }
+
 }
