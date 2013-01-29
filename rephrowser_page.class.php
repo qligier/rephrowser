@@ -1,16 +1,11 @@
 <?php
 
-class rephrowser_page {
-    const VERSION                   = 0.1;
-
-    protected $cookies              = array();
-    protected $preserve_cookies     = true;
+class rephrowser_page extends rephrowser_utils {
+    
     protected $basedir              = false;
 
     protected $request_time         = 0;
     protected $request_url          = '';
-    protected $request_follow_location = true;
-    protected $request_options      = array();
 
     protected $response_plain       = '';
     protected $response_url         = '';
@@ -45,65 +40,18 @@ class rephrowser_page {
        $this->basedir = true;
     }
 
-    function __get($variable) {
-        if (!isset($this->{$variable}))
-            throw new Exception('This variable doesn\'t exist');
-        return $this->{$variable};
-    }
-
 
     public function set_preserve_cookies($bool = true) {
-        $this->preserve_cookies = (bool)$bool;
+        $this->preserve_cookies = ($this->associated_session && $bool);
     }
+
 
     public function set_follow_location($bool = true) {
         if ($bool && !$this->basedir)
             $this->set_option(CURLOPT_FOLLOWLOCATION, true);
-        $this->request_follow_location = $bool;
+        $this->follow_location = $bool;
     }
 
-    /**
-    * Set cURL option
-    * @param    const   $curl_option     One of the cURL options
-    * @param    mixed   $value           The associated value
-    * @return   void
-    * @see      http://php.net/manual/fr/function.curl-setopt.php
-    */
-    public function set_option($curl_option, $value) {
-        $this->request_options[$curl_option] = $value;
-    }
-
-
-    /**
-    * Accept GZIP encoding reponse
-    * @param    bool    $value          Accept GZIP encoding
-    * @return   void
-    */
-    public function accept_gzip($value = TRUE) {
-        if ($value)
-           $this->set_option(CURLOPT_ENCODING, 'gzip');
-       else
-           $this->set_option(CURLOPT_ENCODING, 'identity');
-    }
-
-
-    /*
-    * Set POST option
-    * @param    mixed[] $post           ?
-    */
-    public function set_post($post) {
-        if (!is_string($post) && !is_array($post))
-           throw new Exception('This is not a valid POST value');
-       $this->set_option(CURLOPT_POST, true);
-       if (is_string($post))
-           $this->set_option(CURLOPT_POSTFIELDS, $post);
-       else {
-           $post_vars = array();
-           foreach ($post AS $k => $v)
-              $post_vars[] = $k.'='.urlencode($v);
-          $this->set_option(CURLOPT_POSTFIELDS, implode('&', $post_vars));
-      }
-    }
 
     /**
     * Returns the value of a cookie by name
@@ -114,32 +62,6 @@ class rephrowser_page {
         return $this->cookies[$name]['value'];
     }
 
-    /**
-    * Sets cookie
-    * @param    string  $name           The name of the cookie
-    * @param    mixed   $value          The value of the cookie
-    * @return   void
-    */
-    public function set_cookie($name, $value) {
-        $this->cookies[$name] = array('value' => $value);
-    }
-
-    public function set_cookies($cookies) {
-        if (is_string($cookies)) {
-            $parts = explode('; ', $cookies);
-            foreach ((array)$parts AS $cookie) {
-                list($name, $value) = explode($cookie, '=', 2);
-                $this->set_cookie($name, $value);
-            }
-        }
-        elseif (is_array($cookies)) {
-            $this->cookies = array_merge($this->cookies, $cookies);
-        }
-    }
-
-    public function set_user_agent($ua) {
-        $this->set_option(CURLOPT_USERAGENT, $ua);
-    }
 
     /**
     * Find one match by pcre pattern in last response
@@ -155,6 +77,7 @@ class rephrowser_page {
            return $matches[1];
        return false;
     }
+
 
     /**
     * Find all matches by pcre pattern in last response
@@ -176,6 +99,7 @@ class rephrowser_page {
       return $result;
     }
 
+
     public function get_all_links($absolute_urls = true) {
         $matches = $this->find_all_matches('#(src|href)=("|\')([^"\']+)\2#i');
         foreach ($matches AS $match) {
@@ -189,9 +113,11 @@ class rephrowser_page {
         return array_keys((array)$unique_urls);
     }
 
+
     public function associate_session(rephrowser_session &$session) {
         $this->associated_session = $session;
     }
+
 
     public function webdirname($url) {
         $parsed = parse_url($url);
@@ -212,21 +138,22 @@ class rephrowser_page {
         return rtrim($return, '\/').'/';
     }
 
+
     public function exec() {
         $this->request_time = -microtime(true);
 
-        $this->request_options[CURLOPT_RETURNTRANSFER] = true;
-        $this->request_options[CURLOPT_HEADER] = true;
+        $this->options[CURLOPT_RETURNTRANSFER] = true;
+        $this->options[CURLOPT_HEADER] = true;
 
         if ($this->preserve_cookies && $this->cookies) {
             $cookies = array();
-            foreach ( $this->cookies as $cookie_name => $cookie_data )
-                $cookies[] = "{$cookie_name}={$cookie_data[value]}";
-            $this->request_options[CURLOPT_COOKIE] = implode(';', $cookies);
+            foreach ( $this->cookies AS $cookie_name => $cookie_data )
+                $cookies[] = $cookie_name.'='.$cookie_data['value'];
+            $this->options[CURLOPT_COOKIE] = implode(';', $cookies);
         }
 
         $c = curl_init($this->response_url);
-        foreach ($this->request_options as $opt => $val)
+        foreach ($this->options as $opt => $val)
             @curl_setopt($c, $opt, $val);
 
         $data = curl_exec($c);
@@ -235,12 +162,16 @@ class rephrowser_page {
         $this->response_plain = $data;
         $this->parse_response($data);
 
+        if ($this->preserve_cookies)
+            $this->associated_session->set_cookies($this->cookies);
+
         if ($this->redirect())
             return false;
 
         $this->associated_session->add_to_history($this);
         $this->request_time += microtime(true);
     }
+
 
     public function infos() {
         if ($this->request_time === 0) {
@@ -252,6 +183,7 @@ class rephrowser_page {
             echo ' (la page a été redirigée)';
         echo '.<br />Son type MIME est ',$this->response_typemime,' et le corps fait ',number_format(mb_strlen($this->response_body), 0, '.', "'"),' caractères.';
     }
+
 
     public function save_in_file($filepath, $overwrite = false) {
         if ((is_file($filepath) && !$overwrite) || $this->request_time === 0)
@@ -281,12 +213,14 @@ class rephrowser_page {
         return $url;
     }
 
+
     protected function detect_encoding() {
         if (isset($this->response_headers['Content-Type']) && strpos($this->response_headers['Content-Type'], 'charset=') !== false)
             $this->response_charset = substr($this->response_headers['Content-Type'], strpos($this->response_headers['Content-Type'], 'charset=') + 8);
         else
             $this->response_charset = $this->find_scalar_match('/text\/html; charset=([^"]+)"/');
     }
+
 
     protected function parse_response( $http ) {
         while (strpos($http, 'HTTP') === 0) {
@@ -304,6 +238,7 @@ class rephrowser_page {
         if ($this->response_typemime = 'text/html')
             $this->get_base_url();
     }
+
 
     /*
      * @todo    Code HTTP ?
@@ -324,6 +259,7 @@ class rephrowser_page {
                         $headers[$header[0]] = '';
                         if (preg_match('$HTTP/(\d{1}\.\d{1}) (\d{3}) (.+)$i', $header[0], $matches))
                             list($null, $this->response_http_version, $this->response_http_code, $this->response_http_msg) = $matches;
+                        $this->response_http_code = (int)$this->response_http_code;
                     }
                 }
             }
@@ -339,6 +275,7 @@ class rephrowser_page {
 
         return $headers;
     }
+
 
     /*
      * 
@@ -357,14 +294,15 @@ class rephrowser_page {
                 else
                     $new_cookie[$parts[$i]] = '';
             }
-            //echo 'Expires : '.strtotime(@$new_cookie['expires']).' : '.time().'<br />';
+            
             if (isset($new_cookie['expires']) && strtotime($new_cookie['expires']) > time())
                 $this->cookies[$name] = $new_cookie;
         }
     }
 
+
     protected function redirect() {
-        if (!$this->request_follow_location)
+        if (!$this->follow_location)
             return false;
         if (!$this->basedir && $this->curl_infos['redirect_count'] > 0) {
             $this->response_redirected = true;
@@ -382,6 +320,7 @@ class rephrowser_page {
         }
         return false;
     }
+
 
     protected function get_base_url() {
         if (preg_match('$<base href="([^"]+)"$is', $this->response_body, $matches))

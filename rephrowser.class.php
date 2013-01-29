@@ -17,6 +17,7 @@ define('IPHONE',            'Mozilla/5.0 (iPod; U; CPU iPhone OS 2_1 like Mac OS
 define('GOOGLEBOT',         'Googlebot/2.1 (+http://www.google.com/bot.html)');
 
 
+require_once 'rephrowser_utils.class.php';
 require_once 'rephrowser_page.class.php';
 require_once 'rephrowser_session.class.php';
 require_once 'rephrowser_html.class.php';

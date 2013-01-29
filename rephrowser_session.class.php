@@ -1,27 +1,12 @@
 <?php
 
-class rephrowser_session {
-    const VERSION                       = 0.1;
+class rephrowser_session extends rephrowser_utils {
 
     protected $session_history          = array();
-    protected $session_keep_cookies     = false;
-    protected $session_cookies          = array();
-    protected $session_follow_location  = true;
     protected $session_auto_referer     = true;
 
-/*
-    public function __sleep() {
-        //return serialize($this);
-    }
 
-    public function __wakeup($serialize) {
-        //$this = unserialize($serialize);
-    }
-*/
 
-    public function serialized() {
-        return serialize($this);
-    }
     public function destroy_historical() {
         $this->session_history = array();
     }
@@ -36,24 +21,29 @@ class rephrowser_session {
         return $this->session_history[count($this->session_history) -$nth];
     }
 
-    public function set_keep_cookies($bool = true) {
-        $this->session_keep_cookies = (bool)$bool;
-    }
-
     public function set_auto_referer($bool = true) {
         $this->session_auto_referer = (bool)$bool;
     }
 
     public function new_page($url) {
         $page = new rephrowser_page($url);
-        $page->set_preserve_cookies($this->session_keep_cookies);
-        if ($this->session_keep_cookies)
-            $page->set_cookies($this->session_cookies);
+
         $page->associate_session($this);
+        $page->set_preserve_cookies($this->preserve_cookies);
+        if ($this->preserve_cookies)
+            $page->set_cookies($this->cookies);
+
         if ($this->session_auto_referer && $last_page = $this->get_history(1)) {
             $page->set_option(CURLOPT_REFERER, $last_page->response_url);
             unset($last_page);
         }
+
+        if ($this->preserve_cookies)
+            $page->set_cookies($this->cookies);
+
+        $page->set_options($this->options);
+        $page->set_follow_location($this->follow_location);
+
         return $page;
     }
 
