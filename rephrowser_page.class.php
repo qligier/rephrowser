@@ -152,6 +152,13 @@ class rephrowser_page extends rephrowser_utils {
             $this->options[CURLOPT_COOKIE] = implode(';', $cookies);
         }
 
+        if (!empty($this->post_values)) {
+            $this->set_option(CURLOPT_POST, true);
+            foreach ($this->post_values AS $name => $value)
+                $post .= $name.'='.$value.'&';
+            $this->set_option(CURLOPT_POSTFIELDS, $post);
+        }
+
         $c = curl_init($this->response_url);
         foreach ($this->options as $opt => $val)
             @curl_setopt($c, $opt, $val);

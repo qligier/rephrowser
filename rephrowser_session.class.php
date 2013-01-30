@@ -38,6 +38,9 @@ class rephrowser_session extends rephrowser_utils {
             unset($last_page);
         }
 
+        if (!empty($this->post_values))
+            $page->add_post($this->post_values);
+
         if ($this->preserve_cookies)
             $page->set_cookies($this->cookies);
 

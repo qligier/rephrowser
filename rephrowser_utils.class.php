@@ -11,6 +11,7 @@ class rephrowser_utils {
     /* Options */
     protected $options              = array();
     protected $follow_location      = true;
+    protected $post_values          = array();
 
 
 
@@ -95,18 +96,26 @@ class rephrowser_utils {
     * Set POST option
     * @param    mixed[] $post           ?
     */
-    public function set_post($post) {
+    public function add_post($post, $value = '') {
         if (!is_string($post) && !is_array($post))
             throw new Exception('This is not a valid POST value');
-        $this->set_option(CURLOPT_POST, true);
-        if (is_string($post))
-            $this->set_option(CURLOPT_POSTFIELDS, $post);
-        else {
-            $post_vars = array();
-            foreach ($post AS $k => $v)
-                $post_vars[] = $k.'='.urlencode($v);
-            $this->set_option(CURLOPT_POSTFIELDS, implode('&', $post_vars));
+        
+        if (is_string($post) && empty($value)) {
+            $post_vars = explode('&', $post);
+            foreach ($post_vars AS $post_var) {
+                list($name, $value) = explode('=', $post_var);
+                $this->post_values[$name] = $value;
+            }
         }
+        elseif (is_array($post))
+            $this->post_values = array_merge($this->post_values, $post);
+        else
+            $this->post_values[$post] = $value;
+    }
+
+
+    public function add_post_file($name, $path) {
+        $this->add_post($name, '@'.$path);
     }
 
 
@@ -129,6 +138,27 @@ class rephrowser_utils {
         $this->set_ssl_accept_all_certificats(false);
         $this->set_option(CURLOPT_SSL_VERIFYHOST, 2);
         $this->set_option(CURLOPT_CAINFO, $path);
+    }
+
+
+    public function set_proxy($proxy, $isSocks5 = false, $username = '', $password = '') {
+        $this->set_option(CURLOPT_PROXY, $proxy);
+        if ($isSocks5)
+            $this->set_option(CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+        else
+            $this->set_option(CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
+        if (!empty($username) && !empty($password))
+            $this->set_option(CURLOPT_PROXYUSERPWD, $username.':'.$password);
+    }
+
+
+    public function set_referer($referer) {
+        $this->set_option(CURLOPT_REFERER, $referer);
+    }
+
+
+    public function set_auth($username, $password) {
+        $this->set_option(CURLOPT_USERPWD, $username.':'.$password);
     }
 
 
