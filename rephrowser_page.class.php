@@ -154,6 +154,7 @@ class rephrowser_page extends rephrowser_utils {
 
         if (!empty($this->post_values)) {
             $this->set_option(CURLOPT_POST, true);
+            $post = '';
             foreach ($this->post_values AS $name => $value)
                 $post .= $name.'='.$value.'&';
             $this->set_option(CURLOPT_POSTFIELDS, $post);
