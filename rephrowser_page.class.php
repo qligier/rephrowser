@@ -291,7 +291,7 @@ class rephrowser_page extends rephrowser_utils {
     protected function parse_cookies($set_cookie) {
         $set_cookie = (array)$set_cookie;
         foreach ($set_cookie AS $cookie) {
-            $parts = explode('; ', $cookie);
+            $parts = explode('; ', $cookie, 6);
             list($name, $value) = explode('=', $parts[0], 2);
             $new_cookie = array('value' => $value);
             for ($i=1, $end=count($parts); $i<$end; ++$i) {
@@ -303,7 +303,8 @@ class rephrowser_page extends rephrowser_utils {
                     $new_cookie[$parts[$i]] = '';
             }
             
-            if (isset($new_cookie['expires']) && strtotime($new_cookie['expires']) > time())
+            if (isset($new_cookie['expires']) && strtotime($new_cookie['expires']) <= time()) {}
+			else
                 $this->cookies[$name] = $new_cookie;
         }
     }

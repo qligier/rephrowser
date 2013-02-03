@@ -21,3 +21,12 @@ require_once 'rephrowser_utils.class.php';
 require_once 'rephrowser_page.class.php';
 require_once 'rephrowser_session.class.php';
 require_once 'rephrowser_html.class.php';
+
+
+
+/*
+TODO
+
+max redirection
+timeout
+*/

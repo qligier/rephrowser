@@ -104,13 +104,13 @@ class rephrowser_utils {
             $post_vars = explode('&', $post);
             foreach ($post_vars AS $post_var) {
                 list($name, $value) = explode('=', $post_var);
-                $this->post_values[$name] = $value;
+                $this->post_values[$name] = urlencode($value);
             }
         }
         elseif (is_array($post))
             $this->post_values = array_merge($this->post_values, $post);
         else
-            $this->post_values[$post] = $value;
+            $this->post_values[$post] = urlencode($value);
     }
 
 
