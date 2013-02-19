@@ -93,9 +93,9 @@ class rephrowser_utils {
 
 
     /*
-    * Set POST option
-    * @param    mixed[] $post           ?
-    */
+     * Add POST value
+     * @param    mixed[] $post           ?
+     */
     public function add_post($post, $value = '') {
         if (!is_string($post) && !is_array($post))
             throw new Exception('This is not a valid POST value');
@@ -114,21 +114,36 @@ class rephrowser_utils {
     }
 
 
+    /* 
+     * Add POST file
+     * @param string    $name   Name of the POST paarameter
+     * @param string    $path   Path to the file to add
+     */
     public function add_post_file($name, $path) {
         $this->add_post($name, '@'.$path);
     }
 
 
+    /*
+     * Follow location headers (redirections) or not
+     * @param   bool    $bool   Follow redirections ?
+     */
     public function set_follow_location($bool = true) {
         $this->follow_location = $bool;
     }
 
-
+    /*
+     * Set the user-agent used in the HTTP request
+     * @param   string  $ua     User-agent string to use
+     */
     public function set_user_agent($ua) {
         $this->set_option(CURLOPT_USERAGENT, $ua);
     }
 
-
+    /*
+     * Accept all SSL certificats or not
+     * @param   bool    $bool   Accept all certificats
+     */
     public function set_ssl_accept_all_certificats($bool = false) {
         $this->set_option(CURLOPT_SSL_VERIFYPEER, (bool)$bool);
     }
@@ -141,6 +156,13 @@ class rephrowser_utils {
     }
 
 
+    /*
+     * Use a proxy
+     * @param   string  $proxy      The adress of the proxy to use. An ip adress with or without port
+     * @param   bool    $isSocks5   The proxy is SOCKS5 or HTTP
+     * @param   string  $username   Username to use for identification
+     * @param   string  $password   Password to use
+     */
     public function set_proxy($proxy, $isSocks5 = false, $username = '', $password = '') {
         $this->set_option(CURLOPT_PROXY, $proxy);
         if ($isSocks5)
@@ -164,6 +186,6 @@ class rephrowser_utils {
 
 
     public function abc() {
-        echo 'ABC_REPHROWSER_UTILS_';
+        echo 'ABC_REPHROWSER_UTILS_ : call abc();<br />'."\n";
     }
 }
